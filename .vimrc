@@ -37,7 +37,7 @@
 "	> https://github.com/corntrace/bufexplorer.git  
 "
 "
-j""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""
 
 """"""""""""""""""""""""""""""""""""""""""""""""""
 "	====>  General 
@@ -89,25 +89,126 @@ set showmatch	"show matching bracets when text indicator isfname over them
 set mat=2		"how many tenths of a second to blink
 
 
+""""""""""""""""""""""""
+" 一键编译/运行，F5编译，F6执行，支持C/C++/Java/Python
+" """"""""""""""""""""""""
+func! CompileGcc()
+    exec "w"
+    let compilecmd="!gcc "
+    let compileflag="-o %< "
+    if search("mpi\.h") != 0
+        let compilecmd = "!mpicc "
+    endif
+    if search("glut\.h") != 0
+        let compileflag .= " -lglut -lGLU -lGL "
+    endif
+    if search("cv\.h") != 0
+        let compileflag .= " -lcv -lhighgui -lcvaux "
+    endif
+    if search("omp\.h") != 0
+        let compileflag .= " -fopenmp "
+    endif
+    if search("math\.h") != 0
+        let compileflag .= " -lm "
+    endif
+    
+    exec compilecmd." % ".compileflag
+endfunc
+
+func! CompileGpp()
+    exec "w"
+    let compilecmd="!g++ "
+    let compileflag="-o %< "
+    if search("mpi\.h") != 0
+        let compilecmd = "!mpic++ "
+    endif
+    if search("glut\.h") != 0
+        let compileflag .= " -lglut -lGLU -lGL "
+    endif
+    if search("cv\.h") != 0
+        let compileflag .= " -lcv -lhighgui -lcvaux "
+    endif
+    if search("omp\.h") != 0
+        let compileflag .= " -fopenmp "
+    endif
+    if search("math\.h") != 0
+        let compileflag .= " -lm "
+    endif
+
+    exec compilecmd." % ".compileflag
+endfunc
+
+func! RunPython()
+    exec "!python2 %"
+endfunc
+
+func! CompileJava()
+    exec "!javac %"
+endfunc
+
+func! CompileCode()
+    exec "w"
+    if &filetype == "cpp"
+        exec "call CompileGpp()"
+    elseif &filetype == "c"
+        exec "call CompileGcc()"
+    elseif &filetype == "python"
+        exec "call RunPython()"
+    elseif &filetype == "java"
+        exec "call CompileJava()"
+    endif
+endfunc
+
+func! RunResult()
+    exec "w"
+    if search("mpi\.h") != 0
+        exec "!mpirun -np 4 ./%<"
+    elseif &filetype == "cpp"
+        exec "! ./%<"
+    elseif &filetype == "c"
+       exec "! ./%<"
+    elseif &filetype == "python"
+       exec "call RunPython"
+    elseif &filetype == "java"
+       exec "!java %<"
+    endif
+endfunc
+map <F5> :call CompileCode()<CR>
+imap <F5> <ESC>:call CompileCode()<CR>
+vmap <F5> <ESC>:call CompileCode()<CR>
+map <F6> :call RunResult()<CR>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""
 "	===> Colors and Fonts
 """"""""""""""""""""""""""""""""""""""""""""""""""
 syntax enable	"enable syntax hl
-set number	"set lines number	
-colorscheme darkblue
-syntax on
-set	hls	
+set number	    "set lines number	
+colorscheme darkblue    " colorscheme of terminal 
+syntax on       " syntax check
+set	hls	        " highlight
 
-
+""""""""""""""""""""""""""""""""""""""""""""""""""
+"   ===> encoding
+""""""""""""""""""""""""""""""""""""""""""""""""""
 let &termencoding=&encoding "&tenc=&enc 
 "set fileencodings=utf-8,gbk,big5,ucs-bom,cp936
 "set fenc=utf-8
-set enc=utf-8
-set fenc=utf-8
-set fencs=utf-8,gbk,gb2312,big5,cp936,ucs-bom
+"set termencoding=utf-8
+"set encoding=utf-8
+set fileencoding=utf-8
+set fileencodings=utf-8,gbk,gb2312,big5,cp936,ucs-bom
 " consle乱码
-language message zh_CN.utf-8
+"language message zh_CN.utf-8
+"language message zh_CN.GKB
+"set ambiwidth=double
+"set encoding=utf-8
+"set termencoding=utf-8
+"set fileencodings=utf-8,chinese,latin-1,gbk,gb2312,big5,ucs-bom
+"if has("win32")
+"    set fileencoding=chinese
+"else
+"    set fileencoding=utf-8
+"endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""
 "	===> Text & tab & indent related
@@ -119,30 +220,32 @@ set smarttab
 set autoindent	"auto indent	
 set cindent		"C indent	
 set shiftwidth=4
-
 set incsearch
+set	wrap	"wrap lines	
+
+"""""""""""""""""""""""""""""""""""""""""""""""""
+"   ===> ctags
+"""""""""""""""""""""""""""""""""""""""""""""""""
+"按下F12即可生成tag
+map <F12> :!ctags -R <CR><CR> 
 set tags=tags	"ctags
 set autochdir	"ctags
-
-
 set lbr
 set tw=500
-
-set ai	"auto indent
-set	si	"smart	indent
-set	wrap	"wrap	lines	
 
 """""""""""""""""""""""""""""""""""""""""""""""""
 "   ===> cscope
 """""""""""""""""""""""""""""""""""""""""""""""""
+" 按下F7即可生成cscope.out
+map <F7> :!cscope -Rbkq <CR><CR>    
 if has("cscope") && filereadable("/usr/bin/cscope")
-    set csprq=/usr/bin/cscope
-    set csto=0
-    set cst
-    set nocsverb
+    set csprg=/usr/bin/cscope " 指定用来执行cscope的命令 
+    set csto=1                " 先搜索tags标签,再搜索cscope数据库
+    set cst                   " 使用|:cstag|(:cs find g),而不是缺省的:tag
+    set nocsverb              " 不显示添加数据库是否成功
 " add any database in current directory
 if filereadable("cscope.out")
-    cs add cscope.out
+    cs add cscope.out       " 添加cscope数据库文件
 elseif filereadable("../cscope.out")
     cs add ../cscope.out 
 elseif filereadable("../../cscope.out")
@@ -150,7 +253,7 @@ elseif filereadable("../../cscope.out")
 elseif filereadable("../../../cscope.out")
     cs add ../../../cscope.out
 endif
-set csverb
+set csverb      " 显示添加成功与否
 endif
 
 " Use both cscope and ctags
@@ -166,15 +269,14 @@ set cscopetagorder=1
 set cscopequickfix=s-,c-,d-,i-,t-,e-
 
 " Cscope mappings
-nnoremap <C-w>\ :scs find c <C-R>=expand("<cword>")<CR><CR>
-nnoremap <C-\>s :cs find s <C-R>=expand("<cword>")<CR><CR>
-nnoremap <C-\>g :cs find g <C-R>=expand("<cword>")<CR><CR>
-nnoremap <C-\>c :cs find c <C-R>=expand("<cword>")<CR><CR>
-nnoremap <C-\>t :cs find t <C-R>=expand("<cword>")<CR><CR>
-nnoremap <C-\>e :cs find e <C-R>=expand("<cword>")<CR><CR>
-nnoremap <C-\>f :cs find f <C-R>=expand("<cword>")<CR><CR>
-nnoremap <C-\>i :cs find i <C-R>=expand("<cword>")<CR><CR>
-nnoremap <C-\>d :cs find d <C-R>=expand("<cword>")<CR><CR>
+nmap <C-@>s :cs find s <C-R>=expand("<cword>")<CR><CR>
+nmap <C-@>g :cs find g <C-R>=expand("<cword>")<CR><CR>
+nmap <C-@>c :cs find c <C-R>=expand("<cword>")<CR><CR>
+nmap <C-@>t :cs find t <C-R>=expand("<cword>")<CR><CR>
+nmap <C-@>e :cs find e <C-R>=expand("<cword>")<CR><CR>
+nmap <C-@>f :cs find f <C-R>=expand("<cfile>")<CR><CR>
+nmap <C-@>i :cs find i <C-R>=expand("<cfile>")<CR><CR>
+nmap <C-@>d :cs find d <C-R>=expand("<cword>")<CR><CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""
 "	===> Visual mode related
@@ -233,12 +335,6 @@ cnoremap <C-K>      <C-U>
 
 cnoremap <C-P> <Up>
 cnoremap <C-N> <Down>
-
-" Useful on some European keyboards
-map 陆 $
-imap 陆 $
-vmap 陆 $
-cmap 陆 $
 
 func! Cwd()
    let cwd = getcwd()
@@ -462,7 +558,6 @@ set foldcolumn=0
 setlocal foldlevel=1 
 nnoremap <space> @=((foldclosed(line('.')) < 0) ? 'zc' : 'zo')<CR> 
 "key stock
-map <F12> :q!<cr>
 
 "======================================================================
 "	===>Plugins	- NERD Tree
