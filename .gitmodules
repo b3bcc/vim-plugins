@@ -25,3 +25,9 @@
 [submodule "bundle/calendar"]
 	path = bundle/calendar
 	url = git://github.com/vim-scripts/calendar.vim--Matsumoto.git
+[submodule "bundle/qiushibaike"]
+	path = bundle/qiushibaike
+	url = git://github.com/vim-scripts/qiushibaike.git
+[submodule "bundle/vimwiki"]
+	path = bundle/vimwiki
+	url = git://github.com/vim-scripts/vimwiki.git
